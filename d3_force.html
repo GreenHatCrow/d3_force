@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>d3 force sample</title>
+	<script src="http://d3js.org/d3.v4.min.js" charset="utf-8"></script>
+	<style>
+		#content {
+			border: solid 1px orange;
+		}
+	</style>
+</head>
+<body>
+	<div>
+		参考にしたサイト
+		nodeの位置を固定するために参考にさせていただいたサイト
+		https://qiita.com/junkoda/items/2d12ecdd3b4b5c99d994
+		とりあえずで3dのforce viewを動かすために参考にさせていただいたサイト
+		http://old-pine.net/html/d3js%E3%81%AE%E3%83%95%E3%82%A9%E3%83%BC%E3%82%B9%EF%BC%88force%EF%BC%89%E3%82%92%E7%90%86%E8%A7%A3%E3%81%99%E3%82%8B%E3%81%9F%E3%82%81%E3%81%AE%E7%B0%A1%E5%8D%98%E3%81%AA%E4%BE%8B%EF%BC%92%EF%BC%9A%E5%90%84%E8%A6%81%E7%B4%A0%E3%82%92%E4%B8%80%E7%9B%B4%E7%B7%9A%E3%81%AB%E4%B8%A6%E3%81%B6
+		g要素を調べた
+		https://wizardace.com/d3-groupdrag/
+
+	</div>
+	<svg id="content" width="640" height="400"></svg>
+</body>
+<script>
+	data_set = [
+		{name:"aaa", level:1},
+		{name:"bbb", level:2},
+		{name:"ccc", level:2},
+		{name:"ddd", level:2},
+		{name:"eee", level:3},
+		{name:"fff", level:3},
+		{name:"ggg", level:3},
+		{name:"hhh", level:3},
+		{name:"iii", level:3},
+		{name:"jjj", level:3},
+		{name:"kkk", level:4},
+		{name:"lll", level:4}
+	];
+	link_set = [
+		{source:"aaa", target:"bbb"},
+		{source:"aaa", target:"ccc"},
+		{source:"aaa", target:"ddd"},
+		{source:"ddd", target:"eee"},
+		{source:"bbb", target:"eee"},
+		{source:"ccc", target:"fff"},
+		{source:"ddd", target:"ggg"},
+		{source:"bbb", target:"hhh"},
+		{source:"ddd", target:"iii"},
+		{source:"ddd", target:"jjj"},
+		{source:"eee", target:"kkk"},
+		{source:"jjj", target:"lll"},
+	];
+var width=window.innerWidth, height=window.innerHeight;
+var content = document.getElementById("content")
+content.style.height = (height - 100) + "px";
+content.style.width = (width - 100) + "px";
+ 
+var force_g = d3.select("#content").append("g") ;
+
+var links =  force_g.selectAll(".link")
+	.data(link_set)
+	.enter()
+	.append("line")
+	.attr("class", "link")
+	.attr("stroke", "#000")
+	.attr("stroke-weight", 1)
+	;
+
+var circles =  force_g.selectAll("circle")
+	.data(data_set)
+	.enter()
+	.append("circle")
+	.attr("class","test-circle")
+	.attr("r", 5)
+	.attr("fill","lightblue")
+	.call(d3.drag()
+		.on("start", dragstarted)
+		.on("drag", dragged)
+		.on("end", dragended)
+	)
+	.on("click", function(d){ alert(d.level + " " + d.name)})
+	;
+
+var line_force = d3.forceSimulation()
+	.nodes(data_set)
+	.on("tick", ticked)
+	.force("link", d3.forceLink(link_set)
+		.id(function(d){ return d.name ; })
+		.distance(20) )
+	.force("center", d3.forceY(height/2))
+	.force('charge', d3.forceManyBody().strength(-10))
+	.force("collision", d3.forceCollide(15))
+	.velocityDecay(0.5)
+	; 
+
+for (var i = 0; i < data_set.length; i++) {
+	line_force.nodes()[i].fx = 200 + data_set[i].level * 50;
+}
+
+function dragstarted(d) {
+	if (!d3.event.active) line_force.alphaTarget(0.9).restart();
+	// d.fx = d.x;
+	d.fy = d.y;
+}
+ 
+function dragged(d) {
+	// d.fx = d3.event.x;
+	d.fy = d3.event.y;
+}
+
+function dragended(d) {
+	if (!d3.event.active) line_force.alphaTarget(0);
+	// d.fx = null;
+	d.fy = null;
+}
+
+function ticked(){
+	circles
+	.attr("cx", function(d){ return d.x; })
+	.attr("cy", function(d){ return d.y; }) ;
+
+	links
+	.attr("x1", function(d) { return d.source.x; })
+	.attr("y1", function(d) { return d.source.y; })
+	.attr("x2", function(d) { return d.target.x; })
+	.attr("y2", function(d) { return d.target.y; });
+}
+</script>
+</html>
